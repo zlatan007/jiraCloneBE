@@ -67,15 +67,27 @@ router.post("/signin", async function (req, res) {
     try {
         const token = await User.matchPasswordAndGenerateToken(email, password);
 
-        const user = await this.findOne({ email });
+        const user = await User.findOne({ email }).lean();
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: "User not found" });
+        }
 
         const userDetails = {
-            firstName: user?.firstName,
-            lastName: user?.lastName,
-            email: user?.email,
-            role: user?.role,
-        }
-        return res.status(200).json({ success: true, token, userDetails });
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            token: user.token,
+        };
+
+
+        return res.status(200).json({ 
+            success: true, 
+            token, 
+            userDetails 
+        });
+
     } catch (error) {
         return res.status(400).json({ sucess: false, error });
     }
