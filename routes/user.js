@@ -4,93 +4,35 @@ const { createToken } = require("../services/user");
 
 const router = Router();
 
-router.post("/signup", async (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
-        const { firstName, lastName, email, password } = req.body;
+        const { id } = req.params;
 
-        if (!firstName || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "firstName, email, and password are required.",
-            });
-        }
-        const user = await User.create({
-            firstName,
-            lastName,
-            email,
-            password
-        });
-
-        console.log("user", user)
-
-        const token = createToken(user);
-
-        user.token = token;
-
-        await user.save();
-
-        
-
-        return res.status(200).json({
-            success: true,
-            message: "Login Successful."
-        });
-
-    } catch (err) {
-        console.log("error", err);
-
-        if (err.code === 11000 && err.keyValue?.email) {
-            return res.status(409).json({
-                success: false,
-                message: "Email already exists.",
-            });
-        }
-
-        if (err.name === "ValidationError") {
-            const errors = Object.values(err.errors).map(e => e.message);
-            return res.status(400).json({
-                success: false,
-                message: "Validation failed.",
-                errors,
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error.",
-        });
-    }
-});
-
-router.post("/signin", async function (req, res) {
-    const { email, password } = req.body;
-    try {
-        const token = await User.matchPasswordAndGenerateToken(email, password);
-
-        const user = await User.findOne({ email }).lean();
+        const user = await User.findById(id).lean();
 
         if (!user) {
-            return res.status(404).json({ success: false, error: "User not found" });
+            return res.status(404).json({
+                success: false,
+                message: "User not find.",
+            });
         }
 
         const userDetails = {
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
-            role: user.role,
-            token: user.token,
         };
 
-
-        return res.status(200).json({ 
-            success: true, 
-            token, 
-            userDetails 
+        return res.status(200).json({
+            success: true,
+            data: { ...userDetails }
         });
 
-    } catch (error) {
-        return res.status(400).json({ sucess: false, error });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
     }
-})
-
+});
 module.exports = router;
